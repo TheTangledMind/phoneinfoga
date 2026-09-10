@@ -21,3 +21,8 @@ coverage
 coverage.*
 unit-tests.xml
 .idea
+
+# Local credentials and environment
+.env
+.env.*
+!.env.example
