@@ -4,6 +4,7 @@ import (
 	"github.com/sundowndev/dorkgen"
 	"github.com/sundowndev/dorkgen/googlesearch"
 	"github.com/sundowndev/phoneinfoga/v2/lib/number"
+	"github.com/sundowndev/phoneinfoga/v2/lib/searchlist"
 )
 
 const Googlesearch = "googlesearch"
@@ -43,7 +44,30 @@ func (s *googlesearchScanner) DryRun(_ number.Number, _ ScannerOptions) error {
 	return nil
 }
 
-func (s *googlesearchScanner) Run(n number.Number, _ ScannerOptions) (interface{}, error) {
+func (s *googlesearchScanner) Run(n number.Number, opts ScannerOptions) (interface{}, error) {
+	if path, _ := opts["search_list"].(string); path != "" {
+		queries, err := searchlist.Load(path, n.E164, n.RawLocal)
+		if err != nil {
+			return nil, err
+		}
+		res := GoogleSearchResponse{}
+		for _, q := range queries {
+			d := &GoogleSearchDork{Number: n.E164, Dork: q.Text, URL: q.URL}
+			switch q.Category {
+			case "general":
+				res.General = append(res.General, d)
+			case "individuals":
+				res.Individuals = append(res.Individuals, d)
+			case "reputation":
+				res.Reputation = append(res.Reputation, d)
+			case "social_media":
+				res.SocialMedia = append(res.SocialMedia, d)
+			case "disposable_providers":
+				res.DisposableProviders = append(res.DisposableProviders, d)
+			}
+		}
+		return res, nil
+	}
 	res := GoogleSearchResponse{
 		SocialMedia:         getSocialMediaDorks(n),
 		DisposableProviders: getDisposableProvidersDorks(n),

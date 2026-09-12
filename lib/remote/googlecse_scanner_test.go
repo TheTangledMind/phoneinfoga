@@ -48,7 +48,7 @@ func TestGoogleCSEScanner_Scan_Success(t *testing.T) {
 					MatchParam("cx", "fake_search_engine_id").
 					// TODO: the matcher below doesn't work for some reason
 					//MatchParam("q", "intext:\"14152229670\" OR intext:\"+14152229670\" OR intext:\"4152229670\" OR intext:\"(415) 222-9670\"").
-					MatchParam("start", "0").
+					MatchParam("start", "1").
 					Reply(200).
 					JSON(&customsearch.Search{
 						ServerResponse: googleapi.ServerResponse{
@@ -71,7 +71,7 @@ func TestGoogleCSEScanner_Scan_Success(t *testing.T) {
 					MatchParam("cx", "fake_search_engine_id").
 					// TODO: the matcher below doesn't work for some reason
 					//MatchParam("q", "(ext:doc OR ext:docx OR ext:odt OR ext:pdf OR ext:rtf OR ext:sxw OR ext:psw OR ext:ppt OR ext:pptx OR ext:pps OR ext:csv OR ext:txt OR ext:xls) intext:\"14152229670\" OR intext:\"+14152229670\" OR intext:\"4152229670\" OR intext:\"(415)+222-9670\"").
-					MatchParam("start", "0").
+					MatchParam("start", "1").
 					Reply(200).
 					JSON(&customsearch.Search{
 						ServerResponse: googleapi.ServerResponse{
@@ -115,7 +115,7 @@ func TestGoogleCSEScanner_Scan_Success(t *testing.T) {
 					// MatchHeader("Authorization", "secret").
 					// TODO: the matcher below doesn't work for some reason
 					//MatchParam("q", "intext:\"14152229670\" OR intext:\"+14152229670\" OR intext:\"4152229670\" OR intext:\"(415) 222-9670\"").
-					MatchParam("start", "0").
+					MatchParam("start", "1").
 					Reply(200).
 					JSON(&customsearch.Search{
 						ServerResponse: googleapi.ServerResponse{
@@ -140,7 +140,7 @@ func TestGoogleCSEScanner_Scan_Success(t *testing.T) {
 					// MatchHeader("Authorization", "secret").
 					// TODO: the matcher below doesn't work for some reason
 					//MatchParam("q", "(ext:doc OR ext:docx OR ext:odt OR ext:pdf OR ext:rtf OR ext:sxw OR ext:psw OR ext:ppt OR ext:pptx OR ext:pps OR ext:csv OR ext:txt OR ext:xls) intext:\"14152229670\" OR intext:\"+14152229670\" OR intext:\"4152229670\" OR intext:\"(415)+222-9670\"").
-					MatchParam("start", "0").
+					MatchParam("start", "1").
 					Reply(200).
 					JSON(&customsearch.Search{
 						ServerResponse: googleapi.ServerResponse{
@@ -187,7 +187,7 @@ func TestGoogleCSEScanner_Scan_Success(t *testing.T) {
 					MatchParam("cx", "fake_search_engine_id").
 					// TODO: the matcher below doesn't work for some reason
 					//MatchParam("q", "intext:\"14152229670\" OR intext:\"+14152229670\" OR intext:\"4152229670\" OR intext:\"(415) 222-9670\"").
-					MatchParam("start", "0").
+					MatchParam("start", "1").
 					Reply(200).
 					JSON(&customsearch.Search{
 						ServerResponse: googleapi.ServerResponse{
@@ -219,7 +219,7 @@ func TestGoogleCSEScanner_Scan_Success(t *testing.T) {
 					MatchParam("cx", "fake_search_engine_id").
 					// TODO: the matcher below doesn't work for some reason
 					//MatchParam("q", "(ext:doc OR ext:docx OR ext:odt OR ext:pdf OR ext:rtf OR ext:sxw OR ext:psw OR ext:ppt OR ext:pptx OR ext:pps OR ext:csv OR ext:txt OR ext:xls) intext:\"14152229670\" OR intext:\"+14152229670\" OR intext:\"4152229670\" OR intext:\"(415)+222-9670\"").
-					MatchParam("start", "0").
+					MatchParam("start", "1").
 					Reply(200).
 					JSON(&customsearch.Search{
 						ServerResponse: googleapi.ServerResponse{
@@ -249,7 +249,7 @@ func TestGoogleCSEScanner_Scan_Success(t *testing.T) {
 				gock.New("https://customsearch.googleapis.com").
 					Get("/customsearch/v1").
 					MatchParam("cx", "fake_search_engine_id").
-					MatchParam("start", "0").
+					MatchParam("start", "1").
 					Reply(429).
 					JSON(&googleapi.Error{
 						Code:    429,
@@ -281,7 +281,7 @@ func TestGoogleCSEScanner_Scan_Success(t *testing.T) {
 				gock.New("https://customsearch.googleapis.com").
 					Get("/customsearch/v1").
 					MatchParam("cx", "fake_search_engine_id").
-					MatchParam("start", "0").
+					MatchParam("start", "1").
 					Reply(403).
 					JSON(&googleapi.Error{
 						Code:    403,

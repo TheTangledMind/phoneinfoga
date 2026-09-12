@@ -26,3 +26,6 @@ unit-tests.xml
 .env
 .env.*
 !.env.example
+
+# Private scan output
+/reports/

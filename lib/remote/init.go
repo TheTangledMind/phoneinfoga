@@ -14,5 +14,9 @@ func InitScanners(remote *Library) {
 	remote.AddScanner(NewOVHScanner(ovhSupplier))
 	remote.AddScanner(NewGoogleCSEScanner(nil))
 
+	for _, name := range []string{"serpapi", "github", "reddit", "duckduckgo"} {
+		remote.AddScanner(newNativeScanner(name))
+	}
+
 	remote.LoadPlugins()
 }

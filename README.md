@@ -16,6 +16,7 @@ Original GPL-3.0 licensing is preserved: [LICENSE](LICENSE).
 
 - [Installation and source builds](docs/getting-started/install.md)
 - [Usage instructions](docs/getting-started/usage.md)
+- [Native providers, terminal menu, editable searches and Markdown export](docs/getting-started/native-osint.md)
 - [Scanner configuration](docs/getting-started/scanners.md)
 - [Go module usage](docs/getting-started/go-module-usage.md)
 - [REST API specification](web/docs/swagger.yaml)
@@ -38,6 +39,15 @@ PhoneInfoga is a tool for gathering information about international phone number
 - Check for reputation reports, social media, disposable numbers and more
 - Use the graphical user interface to run scans from the browser
 - Programmatic usage with the [REST API specification](web/docs/swagger.yaml) and [Go modules](https://pkg.go.dev/github.com/sundowndev/phoneinfoga/v2)
+
+## Native terminal additions
+
+Build this fork's terminal version with `go build -tags headless -o bin/phoneinfoga .`,
+then run `./bin/phoneinfoga menu`. Native SerpAPI, GitHub, Reddit OAuth and
+DuckDuckGo instant-answer providers complement the existing scanners. The menu
+selects sources and saves private Markdown reports. Google query lists can be
+edited as JSON and shared with the companion. See the [guide](docs/getting-started/native-osint.md)
+for provider requirements, external credential files and limitations.
 
 ## Anti-features
 

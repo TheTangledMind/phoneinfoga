@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"unicode"
 )
 
 type ConsoleOutput struct {
@@ -20,6 +21,7 @@ func NewConsoleOutput(w io.Writer) *ConsoleOutput {
 
 func (o *ConsoleOutput) Write(result map[string]interface{}, errs map[string]error) error {
 	succeeded := 0
+	skipped := 0
 	for _, name := range getSortedResultKeys(result) {
 		res := result[name]
 		if res == nil {
@@ -29,7 +31,11 @@ func (o *ConsoleOutput) Write(result map[string]interface{}, errs map[string]err
 		_, _ = fmt.Fprintf(o.w, color.WhiteString("Results for %s\n"), name)
 		o.displayResult(res, "")
 		_, _ = fmt.Fprintf(o.w, "\n")
-		succeeded++
+		if status, ok := res.(interface{ ScanStatus() string }); ok && status.ScanStatus() == "skipped" {
+			skipped++
+		} else if _, failed := errs[name]; !failed {
+			succeeded++
+		}
 	}
 
 	if len(errs) > 0 {
@@ -42,6 +48,9 @@ func (o *ConsoleOutput) Write(result map[string]interface{}, errs map[string]err
 
 	_, _ = fmt.Fprintf(o.w, "%d scanner(s) succeeded\n", succeeded)
 
+	if skipped > 0 {
+		fmt.Fprintf(o.w, "%d scanner(s) skipped; see configuration notes above\n", skipped)
+	}
 	return nil
 }
 
@@ -81,7 +90,7 @@ func (o *ConsoleOutput) displayResult(val interface{}, prefix string) {
 		switch reflectValue.Field(i).Kind() {
 		case reflect.String:
 			_, _ = fmt.Fprintf(o.w, "%s%s: ", prefix, fieldTitle)
-			_, _ = fmt.Fprintf(o.w, color.YellowString("%s\n"), valueValue)
+			_, _ = fmt.Fprintf(o.w, color.YellowString("%s\n"), safeConsoleText(valueValue.(string)))
 		case reflect.Bool:
 			_, _ = fmt.Fprintf(o.w, "%s%s: ", prefix, fieldTitle)
 			_, _ = fmt.Fprintf(o.w, color.YellowString("%v\n"), valueValue)
@@ -114,4 +123,13 @@ func getSortedErrorKeys(m map[string]error) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+func safeConsoleText(s string) string {
+	return strings.Map(func(r rune) rune {
+		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
+			return ' '
+		}
+		return r
+	}, s)
 }

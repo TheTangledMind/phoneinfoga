@@ -7,18 +7,21 @@ import (
 	"github.com/sundowndev/dorkgen"
 	"github.com/sundowndev/dorkgen/googlesearch"
 	"github.com/sundowndev/phoneinfoga/v2/lib/number"
+	"github.com/sundowndev/phoneinfoga/v2/lib/searchlist"
 	"google.golang.org/api/customsearch/v1"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 )
 
 const GoogleCSE = "googlecse"
 
 type googleCSEScanner struct {
 	MaxResults int64
+	ctx        context.Context
 	httpClient *http.Client
 }
 
@@ -71,6 +74,18 @@ func (s *googleCSEScanner) DryRun(_ number.Number, opts ScannerOptions) error {
 }
 
 func (s *googleCSEScanner) Run(n number.Number, opts ScannerOptions) (interface{}, error) {
+	configured := *s
+	if raw := opts.GetStringEnv("GOOGLECSE_MAX_RESULTS"); raw != "" {
+		if v, e := strconv.Atoi(raw); e == nil && v > 0 && v <= 100 {
+			configured.MaxResults = int64(v)
+		}
+	}
+	s = &configured
+	s.ctx = context.Background()
+	if c, ok := opts["context"].(context.Context); ok {
+		s.ctx = c
+	}
+
 	var allItems []*customsearch.Result
 	var dorks []*GoogleSearchDork
 	var totalResultCount int
@@ -78,18 +93,53 @@ func (s *googleCSEScanner) Run(n number.Number, opts ScannerOptions) (interface{
 	var cx = opts.GetStringEnv("GOOGLECSE_CX")
 	var apikey = opts.GetStringEnv("GOOGLE_API_KEY")
 
-	dorks = append(dorks, s.generateDorkQueries(n)...)
+	customPath, _ := opts["search_list"].(string)
+	if customPath != "" {
+		queries, e := searchlist.Load(customPath, n.E164, n.RawLocal)
+		if e != nil {
+			return nil, e
+		}
+		max, ok := opts["max_queries"].(int)
+		if !ok || max < 1 {
+			max = 5
+		}
+		if max > 45 {
+			max = 45
+		}
+		if len(queries) > max {
+			queries = queries[:max]
+		}
+		for _, q := range queries {
+			dorks = append(dorks, &GoogleSearchDork{Number: n.E164, Dork: q.Text, URL: q.URL})
+		}
+		s.MaxResults = 10 // Custom lists fetch only the first page of each query.
+	} else {
+		dorks = append(dorks, s.generateDorkQueries(n)...)
+	}
 
-	customsearchService, err := customsearch.NewService(
-		context.Background(),
-		option.WithAPIKey(apikey),
-		option.WithHTTPClient(s.httpClient),
-	)
+	serviceOptions := []option.ClientOption{option.WithAPIKey(apikey)}
+	if s.httpClient != nil {
+		serviceOptions = append(serviceOptions, option.WithHTTPClient(s.httpClient))
+	}
+	customsearchService, err := customsearch.NewService(s.ctx, serviceOptions...)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, req := range dorks {
+	for i, req := range dorks {
+		if customPath != "" && i > 0 {
+			pace, ok := opts["pace"].(time.Duration)
+			if !ok || pace < time.Second {
+				pace = time.Second
+			}
+			timer := time.NewTimer(pace)
+			select {
+			case <-s.ctx.Done():
+				timer.Stop()
+				return nil, errors.New("Google query session cancelled")
+			case <-timer.C:
+			}
+		}
 		n, items, err := s.search(customsearchService, req.Dork, cx)
 		if err != nil {
 			if s.isRateLimit(err) {
@@ -121,22 +171,31 @@ func (s *googleCSEScanner) search(service *customsearch.Service, q string, cx st
 	var results []*customsearch.Result
 	var totalResultCount int
 
-	offset := int64(0)
-	for offset < s.MaxResults {
+	offset := int64(1)
+	for offset <= s.MaxResults {
 		search := service.Cse.List()
 		search.Cx(cx)
 		search.Q(q)
 		search.Start(offset)
-		searchQuery, err := search.Do()
+		ctx := s.ctx
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		requestCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+		searchQuery, err := search.Context(requestCtx).Do()
+		cancel()
 		if err != nil {
 			return 0, nil, err
 		}
 		results = append(results, searchQuery.Items...)
+		if searchQuery.SearchInformation == nil {
+			return 0, nil, errors.New("Google returned an incomplete response")
+		}
 		totalResultCount, err = strconv.Atoi(searchQuery.SearchInformation.TotalResults)
 		if err != nil {
 			return 0, nil, err
 		}
-		if totalResultCount <= int(s.MaxResults) {
+		if totalResultCount <= int(s.MaxResults) || len(searchQuery.Items) == 0 {
 			break
 		}
 		offset += int64(len(searchQuery.Items))

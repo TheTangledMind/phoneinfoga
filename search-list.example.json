@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "queries": [
+    {
+      "category": "general",
+      "query": "\"{number}\"",
+      "enabled": true
+    },
+    {
+      "category": "reputation",
+      "query": "\"{number}\" scam OR spam",
+      "enabled": true
+    },
+    {
+      "category": "social_media",
+      "query": "site:reddit.com \"{number}\"",
+      "enabled": true
+    }
+  ]
+}
