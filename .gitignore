@@ -22,6 +22,8 @@ coverage.*
 unit-tests.xml
 .idea
 
+#stop AI settings be shared
+AGENTS.md
 # Local credentials and environment
 .env
 .env.*
